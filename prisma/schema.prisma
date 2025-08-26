@@ -1,0 +1,24 @@
+datasource db {
+provider = "sqlite" // swap to postgresql/mysql in prod
+url = env("DATABASE_URL")
+}
+
+
+generator client {
+provider = "prisma-client-js"
+}
+
+
+model User {
+id String @id @default(cuid())
+email String @unique
+passwordHash String
+role Role @default(USER)
+createdAt DateTime @default(now())
+}
+
+
+enum Role {
+USER
+ADMIN
+}
