@@ -1,4 +1,4 @@
-import { redis } from "./radis";
+import { redis } from "./redis";
 import { randomToken } from "./crypto";
 import { env } from "./env";
 
