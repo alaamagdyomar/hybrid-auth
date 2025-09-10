@@ -1,63 +1,61 @@
 "use client";
 
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-// import { login } from "./../api/auth/login/route";
-import { login } from "@/auth/login";
-import { setAccessToken } from "@/auth/tokenStorage";
+import { useAuth } from "@/app/providers";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+  const { setToken } = useAuth();
   const router = useRouter();
+  const next = useSearchParams().get("next") || "/dashboard";
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    try {
-      const { accessToken } = await login(email, password);
-      setAccessToken(accessToken); // Save in memory
-      router.push("/dashboard");
-    } catch (err: any) {
-      setError("Invalid credentials");
+    setErr(null);
+
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include", // receive sid cookie
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      setErr(data?.error || "Login failed");
+      return;
     }
+
+    setToken(data.accessToken); // keep JWT in memory
+    router.replace(next);
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white shadow-lg rounded-lg p-6 w-80 space-y-4"
-      >
-        <h1 className="text-xl font-bold text-center">Login</h1>
-
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-
+    <main className="min-h-screen flex items-center justify-center p-6">
+      <form onSubmit={onSubmit} className="w-full max-w-sm space-y-4 border rounded-xl p-6">
+        <h1 className="text-xl font-semibold">Sign in</h1>
         <input
-          type="email"
-          placeholder="Email"
+          className="border p-2 w-full rounded"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="border p-2 w-full rounded"
+          placeholder="Email"
+          type="email"
           required
         />
-
         <input
-          type="password"
-          placeholder="Password"
+          className="border p-2 w-full rounded"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="border p-2 w-full rounded"
+          placeholder="Password"
+          type="password"
           required
         />
-
-        <button
-          type="submit"
-          className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
-        >
-          Login
-        </button>
+        {err && <p className="text-red-600">{err}</p>}
+        <button className="px-4 py-2 rounded bg-black text-white w-full">Login</button>
       </form>
-    </div>
+    </main>
   );
 }

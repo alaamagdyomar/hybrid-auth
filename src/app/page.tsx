@@ -1,19 +1,17 @@
-// app/page.tsx
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { verifyAuth } from "@/lib/auth";
+"use client";
 
-export default async function HomePage() {
-  const token = cookies().get("access_token")?.value;
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "./providers";
 
-  if (!token) {
-    redirect("/login");
-  }
+export default function Home() {
+  const router = useRouter();
+  const { token, ready } = useAuth();
 
-  try {
-    await verifyAuth(token);
-    redirect("/dashboard");
-  } catch {
-    redirect("/login");
-  }
+  useEffect(() => {
+    if (!ready) return;
+    router.replace(token ? "/dashboard" : "/login");
+  }, [ready, token, router]);
+
+  return <main className="p-6">Loading…</main>;
 }
